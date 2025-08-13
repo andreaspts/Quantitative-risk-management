@@ -1,3 +1,10 @@
+#Example for copula for time series in finances:
+#In copula terms one (i) models each marginal time series (price/returns, volume/log-volume) 
+#and (ii) models their dependence separately via a copula. 
+#In practice, one uses log-returns and log-volume changes (more stationary),
+#transforms each margin to uniforms (ranks/PIT), 
+#then fits a copula (Gaussian, t, etc.).
+
 # --- Data & marginals -------------------------------------------------------
 #install.packages(c("quantmod","copula"))  # if needed
 library(quantmod)

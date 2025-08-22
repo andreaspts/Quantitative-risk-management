@@ -461,6 +461,47 @@ LL_DCC  <- LL_model(sig_d1, sig_d2, as.numeric(rho_d), as.matrix(yy))
 cat(sprintf("\n[Gaussian log-likelihood over %d days]\n  EWMA: %.2f\n  %s: %.2f\n",
             nrow(yy), LL_EWMA, dcc_path_label, LL_DCC))
 
+## ===========================
+## 5) Information Criteria: AIC, BIC, KLIC
+## ===========================
+# Uses LL_EWMA, LL_DCC, yy, and (if available) dccfit created above.
+
+n_obs <- nrow(yy)
+
+# Parameter counts:
+# - EWMA: set k_EWMA = 1 if you regard λ as a fitted parameter;
+#         set k_EWMA = 0 if λ was fixed a priori.
+k_EWMA <- 1
+
+# - DCC: if rmgarch path, count directly; else manual fallback = 2×GARCH(1,1) + DCC(α,β) = 8
+if (exists("dccfit")) {
+  k_DCC <- length(coef(dccfit))
+  dcc_ic_label <- "DCC (rmgarch)"
+} else if (exists("g1") && exists("g2")) {
+  k_DCC <- 8L
+  dcc_ic_label <- dcc_label
+} else {
+  stop("Cannot determine parameter count for DCC — run the DCC step first.")
+}
+
+# AIC / BIC
+AIC_EWMA <- -2 * as.numeric(LL_EWMA) + 2 * k_EWMA
+BIC_EWMA <- -2 * as.numeric(LL_EWMA) + k_EWMA * log(n_obs)
+
+AIC_DCC  <- -2 * as.numeric(LL_DCC)  + 2 * k_DCC
+BIC_DCC  <- -2 * as.numeric(LL_DCC)  + k_DCC  * log(n_obs)
+
+# Kullback–Leibler IC (per-observation deviance)
+KLIC_EWMA <- (-2 * as.numeric(LL_EWMA)) / n_obs
+KLIC_DCC  <- (-2 * as.numeric(LL_DCC))  / n_obs
+
+cat("\n--- Information Criteria ---\n")
+cat(sprintf("EWMA  : AIC = %.2f | BIC = %.2f | KLIC (per obs) = %.6f\n",
+            AIC_EWMA, BIC_EWMA, KLIC_EWMA))
+cat(sprintf("%s: AIC = %.2f | BIC = %.2f | KLIC (per obs) = %.6f\n",
+            dcc_ic_label, AIC_DCC, BIC_DCC, KLIC_DCC))
+
+
 ## ============= (Nice-to-have) Overlay realized vs model =============
 op <- par(mfrow = c(1,1), mar = c(4,4,3,1))
 plot(rho_real, col="black", lwd=1.2, ylim=c(-1,1),
